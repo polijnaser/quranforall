@@ -211,8 +211,11 @@
                 translationElement.textContent = verse.translations?.fr?.text || '(Pas de traduction)';
                 verseElement.appendChild(translationElement);
 
+                // Construire l'URL de l'audio avec EveryAyah API
+                const audioUrl = `https://everyayah.com/data/mishary_alafasy/${String(verse.chapter_number).padStart(3, '0')}.${String(verse.number_in_chapter).padStart(3, '0')}.mp3`;
+
                 // Ajouter un gestionnaire de clic pour jouer l'audio
-                verseElement.addEventListener('click', () => playAudio(verse.audio.primary));
+                verseElement.addEventListener('click', () => playAudio(audioUrl));
 
                 versesContainer.appendChild(verseElement);
             });
