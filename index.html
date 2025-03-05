@@ -106,7 +106,7 @@
     </div>
 
     <script>
-        let quranData = [];
+        let quranData = {};
         let currentSourateId = null;
         const versesPerPage = 10;
 
@@ -117,114 +117,16 @@
                 if (!response.ok) throw new Error('Impossible de charger les données du Coran.');
                 quranData = await response.json();
 
-                // Charger les sourates
-                loadSourates();
-            } catch (error) {
-                console.error('Erreur lors du chargement des données du Coran :', error);
-                alert('Désolé, une erreur est survenue lors du chargement des données du Coran.');
-            }
-        }
-
-        // Charger les sourates
-        function loadSourates() {
-            const souratesContainer = document.getElementById('sourates-container');
-
-            quranData.forEach((sourate, index) => {
-                const sourateElement = document.createElement('div');
-                sourateElement.className = 'sourate';
-                sourateElement.textContent = `${sourate.name} (${index + 1})`;
-
-                // Ajouter un gestionnaire de clic pour charger les versets de la sourate
-                sourateElement.addEventListener('click', () => loadVerses(index + 1));
-
-                souratesContainer.appendChild(sourateElement);
-            });
-        }
-
-        // Charger les versets d'une sourate spécifique
-        function loadVerses(sourateId) {
-            const versesContainer = document.getElementById('verses-container');
-            versesContainer.innerHTML = ''; // Effacer les versets précédents
-            versesContainer.style.display = 'block'; // Afficher le conteneur des versets
-
-            // Récupérer les versets de la sourate sélectionnée
-            const selectedSourate = quranData[sourateId - 1];
-            if (!selectedSourate) {
-                versesContainer.innerHTML = '<p class="error">Aucun verset trouvé pour cette sourate.</p>';
-                return;
-            }
-
-            // Afficher les versets
-            displayVerses(1, selectedSourate.verses);
-            addPagination(selectedSourate.verses);
-        }
-
-        // Afficher une page spécifique des versets
-        function displayVerses(pageNumber, verses) {
-            const startIdx = (pageNumber - 1) * versesPerPage;
-            const endIdx = startIdx + versesPerPage;
-            const versesToDisplay = verses.slice(startIdx, endIdx);
-
-            const versesContainer = document.getElementById('verses-container');
-            versesContainer.innerHTML = '';
-
-            versesToDisplay.forEach(verse => {
-                const verseElement = document.createElement('div');
-                verseElement.className = 'verse';
-                verseElement.textContent = `${verse.text_uthmani} (${verse.surah}:${verse.verse})`;
-
-                // Construire l'URL de l'audio avec EveryAyah API
-                const audioUrl = `https://everyayah.com/data/mishary_alafasy/${String(verse.surah).padStart(3, '0')}.${String(verse.verse).padStart(3, '0')}.mp3`;
-
-                // Ajouter un gestionnaire de clic pour jouer l'audio
-                verseElement.addEventListener('click', () => playAudio(audioUrl));
-
-                versesContainer.appendChild(verseElement);
-            });
-        }
-
-        // Ajouter la pagination
-        function addPagination(verses) {
-            const totalPages = Math.ceil(verses.length / versesPerPage);
-            const paginationContainer = document.querySelector('.pagination') || document.createElement('div');
-            paginationContainer.className = 'pagination';
-            paginationContainer.innerHTML = '';
-
-            for (let i = 1; i <= totalPages; i++) {
-                const pageButton = document.createElement('button');
-                pageButton.textContent = i;
-                pageButton.addEventListener('click', () => displayVerses(i, verses));
-                paginationContainer.appendChild(pageButton);
-            }
-
-            document.body.appendChild(paginationContainer);
-        }
-
-        // Jouer l'audio du verset
-        function playAudio(audioUrl) {
-            if (!audioUrl) return;
-            const audio = new Audio(audioUrl);
-            audio.play();
-        }
-
-        // Rechercher une sourate ou un verset
-        document.getElementById('search-input').addEventListener('input', (event) => {
-            const query = event.target.value.toLowerCase();
-            const souratesContainer = document.getElementById('sourates-container');
-            const sourates = souratesContainer.children;
-
-            for (const sourate of sourates) {
-                if (sourate.textContent.toLowerCase().includes(query)) {
-                    sourate.style.display = 'block';
-                } else {
-                    sourate.style.display = 'none';
-                }
-            }
-        });
-
-        // Charger les données du Coran au chargement de la page
-        loadQuranData();
-    </script>
-
-</body>
-</html>
+                // Créer une liste des sourates avec leurs noms
+                const sourateNames = [
+                    "الفاتحة", "البقرة", "آل عمران", "النساء", "المائدة", "الأنعام", "الأعراف",
+                    "الأنفال", "التوبة", "يونس", "هود", "يوسف", "الرعد", "إبراهيم", "الحجر",
+                    "النحل", "الإسراء", "الكهف", "maryam", "طه", "الأنبياء", "الحج", "المؤمنون",
+                    "النور", "الفرقان", "الشعراء", "النمل", "القصص", "العنكبوت", "الروم", "لقمان",
+                    "السجدة", "الأحزاب", "سبأ", "فاطر", "يس", "الصافات", "ص", "الزمر", "غافر",
+                    "فصّلت", "الشورى", "الزخرف", "الدخان", "الجاثية", "الأحقاف", "محمد", "الفتح",
+                    "الحجرات", "ق", "الذاريات", "الطور", "النجم", "القمر", "الرحمن", "الواقعة",
+                    "الحديد", "المجادلة", "الحشر", "الممتحنة", "الصف", "الجمعة", "المنافقون",
+                    "التغابن", "الطلاق", "التحريم", "الملك", "القلم", "الحاقة", "المعارج", "نوح",
+                    "الجن", "المزمل", "المدثر", "القيامة", "الإنسان", "المرسلات", "النبأ", "النازعات",
+                    "عبس", "التكوير", "الإنفطار", "المطففين", "الإنش
