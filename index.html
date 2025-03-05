@@ -23,66 +23,15 @@
             margin: 10px 0;
             padding: 10px;
             border: 1px solid #ddd;
-            border-radius: 5px;
             cursor: pointer;
             background-color: #fff;
-            transition: background-color 0.3s;
-        }
-        .sourate:hover {
-            background-color: #e0e0ff;
         }
         .verse {
             margin: 5px 0;
             padding: 5px;
             border: 1px solid #ddd;
-            border-radius: 5px;
             cursor: pointer;
             background-color: #fff;
-            transition: background-color 0.3s;
-        }
-        .verse:hover {
-            background-color: #e0e0ff;
-        }
-        audio {
-            display: none;
-        }
-        #search-container {
-            margin: 20px 0;
-        }
-        #search-input {
-            padding: 10px;
-            width: 80%;
-            max-width: 400px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        #verses-container {
-            display: none;
-        }
-        .pagination {
-            margin: 20px 0;
-        }
-        .pagination button {
-            padding: 5px 10px;
-            margin: 5px;
-            border: none;
-            background-color: #6f42c1;
-            color: white;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .pagination button:hover {
-            background-color: #5a35b3;
-        }
-        .loading {
-            margin: 20px 0;
-            font-size: 1.2em;
-            color: #6f42c1;
-        }
-        .error {
-            color: red;
-            font-size: 1.1em;
-            margin: 20px 0;
         }
     </style>
 </head>
@@ -90,156 +39,56 @@
 
     <h1>القرآن الكريم</h1>
 
-    <!-- Barre de recherche -->
-    <div id="search-container">
-        <input type="text" id="search-input" placeholder="Rechercher une sourate ou un verset...">
-    </div>
-
-    <!-- Liste des sourates -->
-    <div id="sourates-container">
-        <!-- Les sourates seront insérées ici dynamiquement -->
-    </div>
-
-    <!-- Conteneur des versets -->
-    <div id="verses-container">
-        <!-- Les versets de la sourate sélectionnée seront affichés ici -->
-    </div>
+    <div id="sourates-container"></div>
+    <div id="verses-container" style="display:none;"></div>
 
     <script>
-        let quranData = {};
-        let currentSourateId = null;
-        const versesPerPage = 10;
-
-        // Charger les données du Coran depuis le fichier JSON local
-        async function loadQuranData() {
+        // Charger les données du Coran depuis un fichier JSON local
+        async function loadQuran() {
             try {
-                const response = await fetch('quran.json');
-                if (!response.ok) throw new Error(`Impossible de charger le fichier JSON. Code d'erreur : ${response.status}`);
-                quranData = await response.json();
+                const response = await fetch('quran.json'); // Assurez-vous que le chemin est correct
+                const data = await response.json();
 
-                // Créer une liste des sourates avec leurs noms
-                const sourateNames = [
-                    "الفاتحة", "البقرة", "آل عمران", "النساء", "المائدة", "الأنعام", "الأعراف",
-                    "الأنفال", "التوبة", "يونس", "هود", "يوسف", "الرعد", "إبراهيم", "الحجر",
-                    "النحل", "الإسراء", "الكهف", "Maryam", "طه", "الأنبياء", "الحج", "المؤمنون",
-                    "النور", "الفرقان", "الشعراء", "النمل", "القصص", "العنكبوت", "الروم", "لقمان",
-                    "السجدة", "الأحزاب", "سبأ", "فاطر", "يس", "الصافات", "ص", "الزمر", "غافر",
-                    "فصّلت", "الشورى", "الزخرف", "الدخان", "الجاثية", "الأحقاف", "محمد", "الفتح",
-                    "الحجرات", "ق", "الذاريات", "الطور", "النجم", "القمر", "الرحمن", "الواقعة",
-                    "الحديد", "المجادلة", "الحشر", "الممتحنة", "الصف", "الجمعة", "المنافقون",
-                    "التغابن", "الطلاق", "التحريم", "الملك", "القلم", "الحاقة", "المعارج", "نوح",
-                    "الجن", "المزمل", "المدثر", "القيامة", "الإنسان", "المرسلات", "النبأ", "النازعات",
-                    "عبس", "التكوير", "الإنفطار", "المطففين", "الإنش
-                    ...
-                ];
-
-                // Charger les sourates
-                loadSourates();
+                // Afficher les sourates
+                const souratesContainer = document.getElementById('sourates-container');
+                for (const [key, sourate] of Object.entries(data)) {
+                    const sourateElement = document.createElement('div');
+                    sourateElement.className = 'sourate';
+                    sourateElement.textContent = `Sourate ${key}`;
+                    sourateElement.addEventListener('click', () => showVersets(key, sourate));
+                    souratesContainer.appendChild(sourateElement);
+                }
             } catch (error) {
-                console.error('Erreur lors du chargement des données du Coran :', error);
-                alert('Désolé, une erreur est survenue lors du chargement des données du Coran.');
+                console.error('Erreur lors du chargement du fichier JSON :', error);
+                alert('Désolé, une erreur est survenue.');
             }
         }
 
-        // Charger les sourates
-        function loadSourates() {
-            const souratesContainer = document.getElementById('sourates-container');
-
-            sourateNames.forEach((name, index) => {
-                const sourateElement = document.createElement('div');
-                sourateElement.className = 'sourate';
-                sourateElement.textContent = `${name} (${index + 1})`;
-
-                // Ajouter un gestionnaire de clic pour charger les versets de la sourate
-                sourateElement.addEventListener('click', () => loadVerses(index + 1));
-
-                souratesContainer.appendChild(sourateElement);
-            });
-        }
-
-        // Charger les versets d'une sourate spécifique
-        function loadVerses(sourateId) {
-            const versesContainer = document.getElementById('verses-container');
-            versesContainer.innerHTML = ''; // Effacer les versets précédents
-            versesContainer.style.display = 'block'; // Afficher le conteneur des versets
-
-            // Récupérer les versets de la sourate sélectionnée
-            const selectedSourate = quranData[String(sourateId)];
-            if (!selectedSourate || selectedSourate.length === 0) {
-                versesContainer.innerHTML = '<p class="error">Aucun verset trouvé pour cette sourate.</p>';
-                return;
-            }
-
-            // Afficher les versets
-            displayVerses(1, selectedSourate);
-            addPagination(selectedSourate);
-        }
-
-        // Afficher une page spécifique des versets
-        function displayVerses(pageNumber, verses) {
-            const startIdx = (pageNumber - 1) * versesPerPage;
-            const endIdx = startIdx + versesPerPage;
-            const versesToDisplay = verses.slice(startIdx, endIdx);
-
+        // Afficher les versets d'une sourate
+        function showVersets(sourateId, versets) {
             const versesContainer = document.getElementById('verses-container');
             versesContainer.innerHTML = '';
+            versesContainer.style.display = 'block';
 
-            versesToDisplay.forEach(verse => {
+            versets.forEach(verset => {
                 const verseElement = document.createElement('div');
                 verseElement.className = 'verse';
-                verseElement.textContent = `${verse.text} (${verse.chapter}:${verse.verse})`;
-
-                // Construire l'URL de l'audio avec EveryAyah API
-                const audioUrl = `https://everyayah.com/data/mishary_alafasy/${String(verse.chapter).padStart(3, '0')}.${String(verse.verse).padStart(3, '0')}.mp3`;
+                verseElement.textContent = `${verset.text} (${sourateId}:${verset.verse})`;
 
                 // Ajouter un gestionnaire de clic pour jouer l'audio
-                verseElement.addEventListener('click', () => playAudio(audioUrl));
-
+                verseElement.addEventListener('click', () => playAudio(sourateId, verset.verse));
                 versesContainer.appendChild(verseElement);
             });
         }
 
-        // Ajouter la pagination
-        function addPagination(verses) {
-            const totalPages = Math.ceil(verses.length / versesPerPage);
-            const paginationContainer = document.querySelector('.pagination') || document.createElement('div');
-            paginationContainer.className = 'pagination';
-            paginationContainer.innerHTML = '';
-
-            for (let i = 1; i <= totalPages; i++) {
-                const pageButton = document.createElement('button');
-                pageButton.textContent = i;
-                pageButton.addEventListener('click', () => displayVerses(i, verses));
-                paginationContainer.appendChild(pageButton);
-            }
-
-            document.body.appendChild(paginationContainer);
-        }
-
         // Jouer l'audio du verset
-        function playAudio(audioUrl) {
-            if (!audioUrl) return;
-            const audio = new Audio(audioUrl);
-            audio.play();
+        function playAudio(sourateId, verseId) {
+            const audioUrl = `https://everyayah.com/data/mishary_alafasy/${String(sourateId).padStart(3, '0')}.${String(verseId).padStart(3, '0')}.mp3`;
+            new Audio(audioUrl).play();
         }
 
-        // Rechercher une sourate ou un verset
-        document.getElementById('search-input').addEventListener('input', (event) => {
-            const query = event.target.value.toLowerCase();
-            const souratesContainer = document.getElementById('sourates-container');
-            const sourates = souratesContainer.children;
-
-            for (const sourate of sourates) {
-                if (sourate.textContent.toLowerCase().includes(query)) {
-                    sourate.style.display = 'block';
-                } else {
-                    sourate.style.display = 'none';
-                }
-            }
-        });
-
-        // Charger les données du Coran au chargement de la page
-        loadQuranData();
+        // Charger les données au démarrage
+        loadQuran();
     </script>
 
 </body>
