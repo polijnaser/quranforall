@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coran pour Maman</title>
     <style>
-        /* Styles inchangés */
         body {
             font-family: Arial, sans-serif;
             direction: rtl;
@@ -43,11 +42,6 @@
         }
         .verse:hover {
             background-color: #e0e0ff;
-        }
-        .translation {
-            font-size: 0.9em;
-            color: #666;
-            margin-top: 5px;
         }
         audio {
             display: none;
@@ -112,90 +106,64 @@
     </div>
 
     <script>
-        // Variables globales
+        let quranData = [];
         let currentSourateId = null;
-        let versesData = [];
-        const versesPerPage = 10; // Nombre de versets par page
+        const versesPerPage = 10;
 
-        // Fonction pour charger les données des sourates via l'API
-        async function loadSourates() {
-            const souratesContainer = document.getElementById('sourates-container');
-            const apiUrl = 'https://api.quran.com/api/v4/chapters?language=ar';
-
+        // Charger les données du Coran depuis le fichier JSON local
+        async function loadQuranData() {
             try {
-                const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error('Impossible de charger les sourates.');
+                const response = await fetch('quran.json');
+                if (!response.ok) throw new Error('Impossible de charger les données du Coran.');
+                quranData = await response.json();
 
-                const data = await response.json();
-
-                data.chapters.forEach(sourate => {
-                    const sourateElement = document.createElement('div');
-                    sourateElement.className = 'sourate';
-                    sourateElement.textContent = `${sourate.name_arabic} (${sourate.id})`;
-
-                    // Ajouter un gestionnaire de clic pour charger les versets de la sourate
-                    sourateElement.addEventListener('click', () => loadVerses(sourate.id));
-
-                    souratesContainer.appendChild(sourateElement);
-                });
+                // Charger les sourates
+                loadSourates();
             } catch (error) {
-                console.error('Erreur lors du chargement des sourates :', error);
-                alert('Désolé, une erreur est survenue lors du chargement des sourates.');
+                console.error('Erreur lors du chargement des données du Coran :', error);
+                alert('Désolé, une erreur est survenue lors du chargement des données du Coran.');
             }
         }
 
-        // Fonction pour charger les versets d'une sourate spécifique
-        async function loadVerses(sourateId) {
+        // Charger les sourates
+        function loadSourates() {
+            const souratesContainer = document.getElementById('sourates-container');
+
+            quranData.forEach((sourate, index) => {
+                const sourateElement = document.createElement('div');
+                sourateElement.className = 'sourate';
+                sourateElement.textContent = `${sourate.name} (${index + 1})`;
+
+                // Ajouter un gestionnaire de clic pour charger les versets de la sourate
+                sourateElement.addEventListener('click', () => loadVerses(index + 1));
+
+                souratesContainer.appendChild(sourateElement);
+            });
+        }
+
+        // Charger les versets d'une sourate spécifique
+        function loadVerses(sourateId) {
             const versesContainer = document.getElementById('verses-container');
             versesContainer.innerHTML = ''; // Effacer les versets précédents
             versesContainer.style.display = 'block'; // Afficher le conteneur des versets
 
-            // Afficher un indicateur de chargement
-            const loadingMessage = document.createElement('div');
-            loadingMessage.className = 'loading';
-            loadingMessage.textContent = 'Chargement des versets...';
-            versesContainer.appendChild(loadingMessage);
-
-            const apiUrl = `https://api.quran.com/api/v4/quran/verses/by_chapter/${sourateId}?language=ar&words=false`;
-
-            try {
-                const response = await fetch(apiUrl);
-
-                // Vérifier si la requête a réussi
-                if (!response.ok) {
-                    throw new Error(`La requête API a échoué avec le code ${response.status}`);
-                }
-
-                const data = await response.json();
-                versesData = data.verses || []; // Stocker les données des versets
-                currentSourateId = sourateId;
-
-                // Supprimer l'indicateur de chargement
-                versesContainer.removeChild(loadingMessage);
-
-                // Afficher la première page des versets
-                if (versesData.length === 0) {
-                    versesContainer.innerHTML = '<p class="error">Aucun verset trouvé pour cette sourate.</p>';
-                } else {
-                    displayVerses(1);
-                    addPagination();
-                }
-            } catch (error) {
-                console.error('Erreur lors du chargement des versets :', error);
-
-                // Supprimer l'indicateur de chargement
-                versesContainer.removeChild(loadingMessage);
-
-                // Afficher un message d'erreur
-                versesContainer.innerHTML = `<p class="error">Désolé, une erreur est survenue lors du chargement des versets : ${error.message}</p>`;
+            // Récupérer les versets de la sourate sélectionnée
+            const selectedSourate = quranData[sourateId - 1];
+            if (!selectedSourate) {
+                versesContainer.innerHTML = '<p class="error">Aucun verset trouvé pour cette sourate.</p>';
+                return;
             }
+
+            // Afficher les versets
+            displayVerses(1, selectedSourate.verses);
+            addPagination(selectedSourate.verses);
         }
 
-        // Fonction pour afficher une page spécifique des versets
-        function displayVerses(pageNumber) {
+        // Afficher une page spécifique des versets
+        function displayVerses(pageNumber, verses) {
             const startIdx = (pageNumber - 1) * versesPerPage;
             const endIdx = startIdx + versesPerPage;
-            const versesToDisplay = versesData.slice(startIdx, endIdx);
+            const versesToDisplay = verses.slice(startIdx, endIdx);
 
             const versesContainer = document.getElementById('verses-container');
             versesContainer.innerHTML = '';
@@ -203,10 +171,10 @@
             versesToDisplay.forEach(verse => {
                 const verseElement = document.createElement('div');
                 verseElement.className = 'verse';
-                verseElement.textContent = `${verse.text_uthmani} (${verse.chapter_number}:${verse.number_in_chapter})`;
+                verseElement.textContent = `${verse.text_uthmani} (${verse.surah}:${verse.verse})`;
 
                 // Construire l'URL de l'audio avec EveryAyah API
-                const audioUrl = `https://everyayah.com/data/mishary_alafasy/${String(verse.chapter_number).padStart(3, '0')}.${String(verse.number_in_chapter).padStart(3, '0')}.mp3`;
+                const audioUrl = `https://everyayah.com/data/mishary_alafasy/${String(verse.surah).padStart(3, '0')}.${String(verse.verse).padStart(3, '0')}.mp3`;
 
                 // Ajouter un gestionnaire de clic pour jouer l'audio
                 verseElement.addEventListener('click', () => playAudio(audioUrl));
@@ -215,9 +183,9 @@
             });
         }
 
-        // Fonction pour ajouter la pagination
-        function addPagination() {
-            const totalPages = Math.ceil(versesData.length / versesPerPage);
+        // Ajouter la pagination
+        function addPagination(verses) {
+            const totalPages = Math.ceil(verses.length / versesPerPage);
             const paginationContainer = document.querySelector('.pagination') || document.createElement('div');
             paginationContainer.className = 'pagination';
             paginationContainer.innerHTML = '';
@@ -225,21 +193,21 @@
             for (let i = 1; i <= totalPages; i++) {
                 const pageButton = document.createElement('button');
                 pageButton.textContent = i;
-                pageButton.addEventListener('click', () => displayVerses(i));
+                pageButton.addEventListener('click', () => displayVerses(i, verses));
                 paginationContainer.appendChild(pageButton);
             }
 
             document.body.appendChild(paginationContainer);
         }
 
-        // Fonction pour jouer l'audio du verset
+        // Jouer l'audio du verset
         function playAudio(audioUrl) {
             if (!audioUrl) return;
             const audio = new Audio(audioUrl);
             audio.play();
         }
 
-        // Fonction pour rechercher une sourate ou un verset
+        // Rechercher une sourate ou un verset
         document.getElementById('search-input').addEventListener('input', (event) => {
             const query = event.target.value.toLowerCase();
             const souratesContainer = document.getElementById('sourates-container');
@@ -254,8 +222,8 @@
             }
         });
 
-        // Charger les sourates au chargement de la page
-        loadSourates();
+        // Charger les données du Coran au chargement de la page
+        loadQuranData();
     </script>
 
 </body>
