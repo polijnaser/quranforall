@@ -124,7 +124,7 @@
 
             try {
                 const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error('Échec de la requête API pour les sourates.');
+                if (!response.ok) throw new Error('Impossible de charger les sourates.');
 
                 const data = await response.json();
 
@@ -204,12 +204,6 @@
                 const verseElement = document.createElement('div');
                 verseElement.className = 'verse';
                 verseElement.textContent = `${verse.text_uthmani} (${verse.chapter_number}:${verse.number_in_chapter})`;
-
-                // Ajouter une traduction (si disponible)
-                const translationElement = document.createElement('div');
-                translationElement.className = 'translation';
-                translationElement.textContent = verse.translations?.fr?.text || '(Pas de traduction)';
-                verseElement.appendChild(translationElement);
 
                 // Construire l'URL de l'audio avec EveryAyah API
                 const audioUrl = `https://everyayah.com/data/mishary_alafasy/${String(verse.chapter_number).padStart(3, '0')}.${String(verse.number_in_chapter).padStart(3, '0')}.mp3`;
